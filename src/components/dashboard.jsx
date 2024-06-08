@@ -25,7 +25,7 @@ const Dashboard = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [postsPerPage] = useState(10);
+  const [postsPerPage] = useState(15);
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('');
 
@@ -138,7 +138,7 @@ const Dashboard = () => {
           </Box>
         ))}
       </SimpleGrid>
-      <Flex justify="center" mt={5}>
+      <Flex justify="center" alignItems="center" mt={5}>
         <HStack spacing={2}>
           <IconButton 
             icon={<ChevronLeftIcon />} 
@@ -148,6 +148,7 @@ const Dashboard = () => {
             color="white" 
             _hover={{ bg: "purple.700" }}
           />
+          <Text color="white">Page {currentPage} of {totalPages}</Text>
           <IconButton 
             icon={<ChevronRightIcon />} 
             onClick={() => paginate(currentPage + 1)} 
