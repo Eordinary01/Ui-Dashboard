@@ -1,57 +1,120 @@
-// src/components/Dashboard.js
 import React, { useEffect, useState } from 'react';
-import { 
-  Box, 
-  SimpleGrid, 
-  Text, 
-  Link, 
-  Heading, 
-  Spinner, 
-  Center, 
-  IconButton, 
-  Flex, 
-  HStack, 
-  Badge, 
-  Avatar, 
-  Button, 
-  Input, 
-  Select, 
-  Tooltip 
+import {
+  Box,
+  SimpleGrid,
+  Heading,
+  Spinner,
+  Center,
+  Flex,
 } from '@chakra-ui/react';
-import { ChevronLeftIcon, ChevronRightIcon, SearchIcon } from '@chakra-ui/icons';
-import fetchData from '../api';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  PointElement,
+  LineElement
+} from 'chart.js';
+import { Bar, Pie, Line } from 'react-chartjs-2';
+import mockData from '../mockData'; // Import the mock data
+
+// Register chart components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  PointElement,
+  LineElement
+);
 
 const Dashboard = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [postsPerPage] = useState(15);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filter, setFilter] = useState('');
 
   useEffect(() => {
-    const getPosts = async () => {
-      const data = await fetchData();
-      setPosts(data);
+    // Simulate fetching data
+    const fetchData = async () => {
+      // Here we use mockData instead of fetching from an API
+      setPosts(mockData);
       setLoading(false);
     };
 
-    getPosts();
+    fetchData();
   }, []);
 
-  // Get current posts
-  const indexOfLastPost = currentPage * postsPerPage;
-  const indexOfFirstPost = indexOfLastPost - postsPerPage;
-  const currentPosts = posts
-    .filter(post => post.title.toLowerCase().includes(searchTerm.toLowerCase()))
-    .filter(post => (filter ? post.sector === filter : true))
-    .slice(indexOfFirstPost, indexOfLastPost);
+  // Prepare data for charts
+  const sectorData = posts.reduce((acc, post) => {
+    acc[post.sector] = acc[post.sector] ? acc[post.sector] + 1 : 1;
+    return acc;
+  }, {});
 
-  // Calculate total pages
-  const totalPages = Math.ceil(posts.length / postsPerPage);
+  const regionData = posts.reduce((acc, post) => {
+    acc[post.region] = acc[post.region] ? acc[post.region] + 1 : 1;
+    return acc;
+  }, {});
 
-  // Change page
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+  const intensityData = posts.reduce((acc, post) => {
+    acc[post.intensity] = acc[post.intensity] ? acc[post.intensity] + 1 : 1;
+    return acc;
+  }, {});
+
+  const colors = [
+    'rgba(75, 192, 192, 0.6)',
+    'rgba(153, 102, 255, 0.6)',
+    'rgba(255, 159, 64, 0.6)',
+    'rgba(54, 162, 235, 0.6)',
+    'rgba(255, 206, 86, 0.6)',
+    'rgba(231, 233, 237, 0.6)',
+    'rgba(255, 99, 132, 0.6)',
+    'rgba(75, 192, 192, 0.6)',
+  ];
+
+  const sectorChart = {
+    labels: Object.keys(sectorData),
+    datasets: [
+      {
+        label: 'Posts by Sector',
+        data: Object.values(sectorData),
+        backgroundColor: Object.keys(sectorData).map((_, idx) => colors[idx % colors.length]),
+        borderColor: Object.keys(sectorData).map((_, idx) => colors[idx % colors.length].replace('0.6', '1')),
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  const regionChart = {
+    labels: Object.keys(regionData),
+    datasets: [
+      {
+        label: 'Posts by Region',
+        data: Object.values(regionData),
+        backgroundColor: Object.keys(regionData).map((_, idx) => colors[idx % colors.length]),
+        borderColor: Object.keys(regionData).map((_, idx) => colors[idx % colors.length].replace('0.6', '1')),
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  const intensityChart = {
+    labels: Object.keys(intensityData),
+    datasets: [
+      {
+        label: 'Posts by Intensity',
+        data: Object.values(intensityData),
+        backgroundColor: 'rgba(255, 159, 64, 0.6)',
+        borderColor: 'rgba(255, 159, 64, 1)',
+        borderWidth: 1,
+      },
+    ],
+  };
 
   if (loading) {
     return (
@@ -62,103 +125,27 @@ const Dashboard = () => {
   }
 
   return (
-    <Box p={5} bg="black" color="white">
-      <Flex justify="space-between" align="center" mb={6}>
-        <Heading color="purple.300">Dashboard</Heading>
-        <HStack spacing={3}>
-          <Input 
-            placeholder="Search..." 
-            value={searchTerm} 
-            onChange={(e) => setSearchTerm(e.target.value)} 
-            bg="white" 
-            color="black"
-            w="200px"
-            borderRadius="md"
-            _hover={{ borderColor: "purple.300" }}
-            _focus={{ borderColor: "purple.500", boxShadow: "0 0 0 1px purple.500" }}
-          />
-          {/* <Button
-            leftIcon={<SearchIcon />}
-            colorScheme="purple"
-            variant="solid"
-            onClick={() => {}}
-          >
-            Search
-          </Button> */}
-          <Select 
-            placeholder="Filter by sector" 
-            value={filter} 
-            onChange={(e) => setFilter(e.target.value)} 
-            bg="white" 
-            color="black"
-            borderRadius="md"
-            _hover={{ borderColor: "purple.300" }}
-            _focus={{ borderColor: "purple.500", boxShadow: "0 0 0 1px purple.500" }}
-          >
-            <option value="Retail">Retail</option>
-            <option value="Energy">Energy</option>
-            <option value="Environment">Environment</option>
-            <option value="Financial services">Financial services</option>
-          </Select>
-        </HStack>
+    <Box p={4}>
+      <Flex justify="space-between" align="center" mb={4}>
+        <Heading as="h1" size="lg">Dashboard</Heading>
       </Flex>
-      <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={5}>
-        {currentPosts.map((post) => (
-          <Box 
-            key={post._id} 
-            p={5} 
-            shadow="md" 
-            borderWidth="1px" 
-            borderRadius="md" 
-            bg="purple.900" 
-            _hover={{ bg: "purple.700", transform: "scale(1.05)" }}
-            transition="all 0.2s"
-          >
-            <Heading fontSize="xl" color="purple.300">{post.title}</Heading>
-            <Text mt={4}>{post.insight}</Text>
-            <Flex mt={4} alignItems="center">
-              <Avatar name={post.source} size="sm" mr={2} />
-              <Text fontWeight="bold">{post.source}</Text>
-            </Flex>
-            <Badge mt={4} colorScheme="purple">{post.sector || 'N/A'}</Badge>
-            <Text mt={2}>
-              <strong>Region:</strong> {post.region}
-            </Text>
-            <Text mt={2}>
-              <strong>Country:</strong> {post.country || 'N/A'}
-            </Text>
-            <Text mt={2}>
-              <strong>Pestle:</strong> {post.pestle}
-            </Text>
-            <Tooltip label="Read more" aria-label="Read more tooltip">
-              <Link mt={2} color="purple.200" href={post.url} isExternal>
-                Read more
-              </Link>
-            </Tooltip>
+      <Box mt={8}>
+        <Heading as="h2" size="md" mb={4}>Charts</Heading>
+        <SimpleGrid columns={2} spacing={8}>
+          <Box>
+            <Heading as="h3" size="sm" mb={2}>Posts by Sector</Heading>
+            <Bar data={sectorChart} />
           </Box>
-        ))}
-      </SimpleGrid>
-      <Flex justify="center" alignItems="center" mt={5}>
-        <HStack spacing={2}>
-          <IconButton 
-            icon={<ChevronLeftIcon />} 
-            onClick={() => paginate(currentPage - 1)} 
-            isDisabled={currentPage === 1} 
-            bg="purple.500" 
-            color="white" 
-            _hover={{ bg: "purple.700" }}
-          />
-          <Text color="white">Page {currentPage} of {totalPages}</Text>
-          <IconButton 
-            icon={<ChevronRightIcon />} 
-            onClick={() => paginate(currentPage + 1)} 
-            isDisabled={currentPage === totalPages} 
-            bg="purple.500" 
-            color="white" 
-            _hover={{ bg: "purple.700" }}
-          />
-        </HStack>
-      </Flex>
+          <Box>
+            <Heading as="h3" size="sm" mb={2}>Posts by Region</Heading>
+            <Pie data={regionChart} />
+          </Box>
+          <Box>
+            <Heading as="h3" size="sm" mb={2}>Posts by Intensity</Heading>
+            <Line data={intensityChart} />
+          </Box>
+        </SimpleGrid>
+      </Box>
     </Box>
   );
 };
